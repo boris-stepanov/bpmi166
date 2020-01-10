@@ -1,0 +1,26 @@
+cabal-version:           2.0
+name:                    hello
+version:                 0.1
+build-type:              Simple
+
+library
+  exposed-modules:       Hello.Lib
+  other-modules:         Hello.Prim
+  hs-source-dirs:        src
+  build-depends:         base >= 4.7 && <5
+  default-language:      Haskell2010
+
+executable hello-world
+  main-is:               Main.hs
+  hs-source-dirs:        bin
+  build-depends:         base >=4.7 && <5
+                       , hello
+  default-language:      Haskell2010
+
+test-suite tests
+  type:                  exitcode-stdio-1.0
+  main-is:               Test.hs
+  hs-source-dirs:        test
+  build-depends:         base >=4.7 && <5
+                       , hello
+  default-language:      Haskell2010
