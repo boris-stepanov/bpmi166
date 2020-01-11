@@ -18,6 +18,8 @@
 
  https://docs.haskellstack.org/en/stable/
 
- https://hackage.haskell.org/package/base
+ https://hackage.haskell.org/package/base - документация к библиотекам
 
- https://hoogle.haskell.org/
+ https://hoogle.haskell.org/ - поисковик по символам и сигнатурам
+
+ https://t.me/joinchat/AAAAAEpBtQvWhOzglIJl0Q - телеграм канал
