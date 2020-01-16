@@ -1,6 +1,10 @@
-# Репозиторий, посвящённый семинарским занятиям по курсу "Функциональное программирование" для группы БПМИ166
+# Описание
 
- Черновик описания.
+ Репозиторий, посвящённый семинарским занятиям по курсу "Функциональное программирование" для группы БПМИ166.
+
+## Примечание
+
+ Описание будет дополняться. Домашние задания могут дополняться (только в сторону новых задач, старые меняться не будут), а даты сдачи меняться.
 
 ## Семинары
 
@@ -20,9 +24,9 @@
 ## Полезные материалы
 
  * [Страница курса 2019 г.](http://wiki.cs.hse.ru/Функциональное_программирование_2019)
- * + "Haskell Programming from First Principles", C.Allen, J.Moronuki
- * + "Parallel and Concurrent Programming in Haskell", S.Marlow
- * + [Haskell wiki с полезными статьями по идиомам ФП](https://wiki.haskell.org/Haskell)
+ * "Haskell Programming from First Principles", C.Allen, J.Moronuki
+ * "Parallel and Concurrent Programming in Haskell", S.Marlow
+ * [Haskell wiki с полезными статьями по идиомам ФП](https://wiki.haskell.org/Haskell)
 
 ## Плагины и сторонние утилиты для IDE
  
