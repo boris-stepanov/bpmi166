@@ -9,19 +9,15 @@ import Prelude
 -- https://en.wikipedia.org/wiki/Church_encoding
 -- Для отладки полезно написать также `instance Show (Church Int)`. (Потребуется расширение FlexibleInstances)
 
-newtype ChurchNum a = Stub1 a
+newtype ChurchNum a = ChurchNum a -- Stub
 
 instance Show (ChurchNum Int) where
-  show = _
 instance Eq (ChurchNum Int) where
-  (==) = _
 instance Num (ChurchNum a) where
-  fromInteger = _
-  (+) = _
 
 -- Подобным образом построить тип пара
 
-newtype ChurchCons a = Stub2 a
+newtype ChurchCons a = ChurchCons a -- Stub
 
 cons :: a -> a -> ChurchCons a
 cons = _
