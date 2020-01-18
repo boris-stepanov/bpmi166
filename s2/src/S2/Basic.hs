@@ -90,3 +90,6 @@ map = _
 
 filter :: (a -> Bool) -> [a] -> [a]
 filter = _
+
+fix :: (a -> a) -> a
+fix = _
