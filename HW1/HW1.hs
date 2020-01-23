@@ -35,9 +35,12 @@ pows :: Integer -> [Integer]
 pows = _
 
 {-
-5. Дополняется
+5. Написать функцию, раскладывающую число на список его простых сомножителей.
+primesOf 12 = [2,2,3]
 -}
 
+primesOf :: Integer -> [Integer]
+primesOf = _
 
 {- 6. Заселить следующие типы термами: -}
 
@@ -52,11 +55,40 @@ fun2 :: (a -> b -> c) -> (a -> b) -> a -> c
 fun2 = _
 
 {-
-7. Дополняется
+7. Функции head и tail из библиотеки Data.List не определены на пустых списках.
 -}
 
 {-
-8. Определим тип дерево
+7.1 Требуется реализовать тип данных "непустой список", который гарантированно не может иметь длину меньше 1. (Можно использовать дополнительный тип при необходимости).
+-}
+
+data NonEmptyList a
+
+{-
+7.2. Реализовать базовый функционал для типа "непустой список".
+-}
+
+lengthNonEmpty :: NonEmptyList a -> [Int]
+lengthNonEmpty = _
+
+headNonEmpty :: NonEmptyList a -> a
+headNonEmpty = _
+
+toListNonEmpty :: NonEmptyList a -> [a]
+toListNonEmpty = _
+
+reverseNonEmpty :: NonEmptyList a -> NonEmptyList a
+reverseNonEmpty = _
+
+{-
+7.3. Реализовать базовые инстансы для типа "непустой список".
+-}
+
+instance Eq a => Eq (NonEmptyList a) where
+instance Semigroup (NonEmptyList a) where
+
+{-
+8. Определим тип "дерево":
 -}
 
 data Tree a = Node a [Tree a]    deriving (Show, Eq)
@@ -77,20 +109,46 @@ treeToList = _
 isHeap :: Tree a -> Bool
 isHeap = _
 
-{- # 8.4 Назовём кучу "потрясной", если все элементы k-го потомка не превосходят любой элементы k+1-го потомка. Реализуйте проверку на "потрясность" -}
+-- # 8.4 Назовём кучу "потрясной", если все элементы k-го потомка не превосходят любой элементы k+1-го потомка. Реализуйте проверку на "потрясность"
 
 isAmazingHeap :: Tree a -> Bool
 isAmazingHeap = _
 
--- # 9. Дополняется
+{-
+9. В стандартной библиотеке Хаскелля тип Int не является экземпляром классов Monoid и Semigroup, потому что целые числа являются моноидом по сложению и умножению одновременно.
+-}
+
+{-
+9.1. Напишите типы-обёртки SumMonoid, ProdMonoid и соответствующие инстансы.
+-}
+
+data SumMonoid a
+data ProdMonoid a
+
+instance Num a => Semigroup (SumMonoid a) where
+instance Num a => Monoid (SumMonoid a) where
+instance Num a => Semigroup (ProdMonoid a) where
+instance Num a => Monoid (ProdMonoid a) where
+
+{-
+9.2. Используя только конструкторы данных для `SumMonoid`, `ProdMonoid` и оператор `foldMap` из библиотеки Data.Foldable написать функции, суммирующие и перемножающие список целых чисел.
+-}
+
+sumAll :: [Int] -> Int
+sumAll = _
+
+prodAll :: [Int] -> Int
+prodAll = _
 
 {- 10. Lambda lifting - превращение свободных переменных в аргументы. Например:
 
+```
 pow :: Int -> Int -> Int
 pow n = powTail 1
   where
   powTail acc 0 = acc
   powTail acc k = powTail (acc * n) (k - 1)
+```
 
 Результат вызова `powTail` зависит от `n`, поэтому мы не можем вынести `powTail` в таком виде наружу.
 -}
