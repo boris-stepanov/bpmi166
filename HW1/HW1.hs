@@ -68,7 +68,7 @@ data NonEmptyList a
 7.2. Реализовать базовый функционал для типа "непустой список".
 -}
 
-lengthNonEmpty :: NonEmptyList a -> [Int]
+lengthNonEmpty :: NonEmptyList a -> Int
 lengthNonEmpty = _
 
 headNonEmpty :: NonEmptyList a -> a
@@ -88,7 +88,7 @@ instance Eq a => Eq (NonEmptyList a) where
 instance Semigroup (NonEmptyList a) where
 
 {-
-8. Определим тип "дерево":
+8. Определим тип "непустое дерево":
 -}
 
 data Tree a = Node a [Tree a]    deriving (Show, Eq)
@@ -106,12 +106,12 @@ treeToList = _
 
 -- # 8.3 Реализовать проверку что дерево является кучей, то есть голова меньше любого потомка.
 
-isHeap :: Tree a -> Bool
+isHeap :: Ord a => Tree a -> Bool
 isHeap = _
 
 -- # 8.4 Назовём кучу "потрясной", если все элементы k-го потомка не превосходят любой элементы k+1-го потомка. Реализуйте проверку на "потрясность"
 
-isAmazingHeap :: Tree a -> Bool
+isAmazingHeap :: Ord a => Tree a -> Bool
 isAmazingHeap = _
 
 {-
