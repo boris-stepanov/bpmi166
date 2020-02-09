@@ -141,7 +141,7 @@ instance Num a => Semigroup (ProdMonoid a) where
 instance Num a => Monoid (ProdMonoid a) where
 
 {-
-9.2. Используя только конструкторы данных для `SumMonoid`, `ProdMonoid` и оператор `foldMap` из библиотеки Data.Foldable написать функции, суммирующие и перемножающие список целых чисел.
+9.2. Используя метод `foldMap` из библиотеки Data.Foldable написать функции, суммирующие и перемножающие список целых чисел.
 -}
 
 sumAll :: [Int] -> Int
