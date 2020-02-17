@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 
 import Prelude    hiding (foldl, foldr, foldl')
-import S3.Basic
+import Basic
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
