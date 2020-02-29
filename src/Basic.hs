@@ -76,6 +76,7 @@ instance Functor Tree where
 
 {-
 Аппликаторы - это класс типов, допускающий лифтинг точек и применение поднятых функций к поднятым точкам. Аппликаторы могут иметь больше одного определения.
+
 Control.Applicative:
 -}
 class Functor f => Applicative f where
@@ -88,20 +89,24 @@ class Functor f => Applicative f where
 
 {-
 Законы:
-pure id <*> v = v
-pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
-pure f <*> pure x = pure (f x)
-u <*> pure y = pure ($ y) <*> u
+pure id <*> v = v                             -- identity
+pure (.) <*> u <*> v <*> w = u <*> (v <*> w)  -- composition
+pure f <*> pure x = pure (f x)                -- homomorphism
+u <*> pure y = pure ($ y) <*> u               -- interchange
 -}
 
 -- Полезные функции:
 (*>) :: Applicative f => f a -> f b -> f b
 (*>) = liftA2 (const id)
--- (<*)
+
+(<*) :: Applicative f => f a -> f b -> f a
+(<*) = _
 
 when :: Applicative f => Bool -> f () -> f ()
 when pred run = if pred then run else pure ()
--- unless
+
+unless :: Applicative f => Bool -> f () -> f ()
+unless pred run = if pred then pure () else run
 
 -- Задание:
 instance Applicative Identity where
@@ -113,9 +118,9 @@ instance Applicative Tree where
 
 {-
 Монады в Хаскелле являются подклассом Applicative, что не является математически корректным, но было сделано ради оптимизации. Есть два определения монад, но в определении класса в стандартной библиотеке зафиксировано через моноид эндофункторов.
+
 Control.Monad:
 -}
-
 class Applicative f => Monad f where
   (>>=) :: f a -> (a -> f b) -> f b      -- он же bind
 
