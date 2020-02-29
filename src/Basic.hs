@@ -1,5 +1,4 @@
 {-# LANGUAGE NumericUnderscores #-}
-{-# LANGUAGE KindSignatures #-}
 {-# OPTIONS_GHC -fdefer-typed-holes #-}
 
 module Basic where
@@ -10,8 +9,8 @@ import           Data.Function (flip, ($), (&), const)
 import           System.IO
 
 -- https://wiki.haskell.org/Typeclassopedia
--- Нужные нам типы
 
+-- Нужные нам типы
 newtype Identity a = Identity { runIdentity :: a }
 data Tree a = Tip | Node a [Tree a]
 
@@ -23,7 +22,7 @@ Hask - категория (*, ->), в которой объектами явля
 
 Control.Category:
 -}
-class Category (cat :: * -> * -> *) where
+class Category cat where
   id :: cat a a
   (.) :: cat b c -> cat a b -> cat a c
 
@@ -44,7 +43,7 @@ instance Category (->) where
 
 Data.Functor
 -}
-class Functor (f :: * -> *) where
+class Functor f where
   fmap :: (a -> b) -> (f a -> f b)
 
 -- часто используется слово lift для функций, "поднимающих" нормальные функции в новую категорию. Здесь это fmap.
