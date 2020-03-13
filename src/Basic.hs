@@ -1,279 +1,168 @@
 {-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS_GHC -fdefer-typed-holes #-}
 
 module Basic where
 
-import           Prelude (Bool(..))
+import           Prelude
 import qualified Control.Monad
 import           Data.Function (flip, ($), (&), const)
 import           System.IO
 
 -- https://wiki.haskell.org/Typeclassopedia
 
--- Нужные нам типы
-newtype Identity a = Identity { runIdentity :: a }
-data Tree a = Tip | Node a [Tree a]
-
--------------------------------- Категория ---------------------------------
+-------------------------------- RWS ---------------------------------------
 
 {-
-https://wiki.haskell.org/Hask
-Hask - категория (*, ->), в которой объектами являются алгераические типы Хаскелля, а морфизмы - функции.
-
-Control.Category:
--}
-class Category cat where
-  id :: cat a a
-  (.) :: cat b c -> cat a b -> cat a c
-
-{-
-Законы:
-∀ f => f . id == id . f == f            - нейтральный элемент
-∀ f g ∃ h: h = f . g, h x = f (g x)     - композиция
+Три популярные монады:
 -}
 
-instance Category (->) where
-  id = _
-  (.) = _
+newtype Reader r a = Reader { runReader :: r -> a }
+newtype Writer w a = Writer { runWriter :: (a, w) }
+newtype State s a = State { runState :: s -> (a, s) }
 
--------------------------------- Функтор -----------------------------------
-
-{-
-Функторы - преобразования категорий, уважающие стрелки. Поскольку любая категория в Хаскелле состоит из типов Хаскелля, то есть является подкатегорией Hask, то и любой функтор является эндофунктором. В Хаскелле класс функтор - это `X :: * -> *`, для которого существует эндофунктор `Hask -> Type`.
-
-Data.Functor
--}
-class Functor f where
-  fmap :: (a -> b) -> (f a -> f b)
-
--- часто используется слово lift для функций, "поднимающих" нормальные функции в новую категорию. Здесь это fmap.
+-------------------------------- Reader ------------------------------------
 
 {-
-Законы:
-fmap id = id
-fmap (f . g) = fmap f . fmap g
-
-Можно доказать, что для любого типа существует не более одной реализации экземпляра Functor, удовлетворяющей законам. Ссылки на доказательство есть в статье Typeclassopedia выше.
+Reader - монада в которой можно в любой момент "попросить" контекст. Монадическое действие можно запустить для заданного контекста с помощью того же runReader.
 -}
 
--- Полезные функции:
-(<$>) :: Functor f => (a -> b) -> f a -> f b
-(<$>) = fmap
+instance Functor (Reader r)
+instance Applicative (Reader r)
+instance Monad (Reader r)
 
-(<&>) :: Functor f => f a -> (a -> b) -> f b
-(<&>) = flip fmap
+-- Вызовем поддействие для изменённого контекста.
+withReader :: (r' -> r) -> Reader r a -> Reader r' a
+withReader = _
 
-void :: Functor f => f a -> f ()
-void = fmap (const ())
+-- Действие, возвращающее значение контекста
+ask :: Reader r r
+ask = _
 
--- Задание:
-instance Functor Identity where
-instance Functor ((,) a) where
-instance Functor ((->) a) where
-instance Functor Tree where
+-- Например: факториал через Reader.
+factorialReader :: Integer -> Integer
+factorialReader n = runReader (go 1) n
+  where
+  go :: Integer -> Reader Integer Integer
+  go acc = do
+    i <- ask
+    if i > 0 then withReader pred (go $ acc * i) else return acc
 
--------------------------------- Аппликатор --------------------------------
-
-{-
-Аппликаторы - это класс типов, допускающий лифтинг точек и применение поднятых функций к поднятым точкам. Аппликаторы могут иметь больше одного определения.
-
-Control.Applicative:
--}
-class Functor f => Applicative f where
-  {-# MINIMAL pure, ((<*>) | liftA2) #-}
-  pure :: a -> f a
-  liftA2 :: (a -> b -> c) -> (f a -> f b -> f c)
-  (<*>) :: f (a -> b) -> f a -> f b
-  liftA2 f x = (<*>) (fmap f x)
-  (<*>) = liftA2 id
+-------------------------------- Writer ------------------------------------
 
 {-
-Законы:
-pure id <*> v = v                             -- identity
-pure (.) <*> u <*> v <*> w = u <*> (v <*> w)  -- composition
-pure f <*> pure x = pure (f x)                -- homomorphism
-u <*> pure y = pure ($ y) <*> u               -- interchange
+Writer - монада, которая "копит" сообщения в моноиде w.
 -}
 
--- Полезные функции:
-(*>) :: Applicative f => f a -> f b -> f b
-(*>) = liftA2 (const id)
+instance Functor (Writer w)
+instance Monoid w => Applicative (Writer w)
+instance Monoid w => Monad (Writer w)
 
-(<*) :: Applicative f => f a -> f b -> f a
-(<*) = _
+-- Достаёт накопленные данные, без самого результата.
+execWriter :: Writer w a -> w
+execWriter = _
 
-when :: Applicative f => Bool -> f () -> f ()
-when pred run = if pred then run else pure ()
+-- Преобразовывает данные от другого поддействия.
+mapWriter :: ((a,w) -> (b,w')) -> Writer w a -> Writer w' b
+mapWriter = _
 
-unless :: Applicative f => Bool -> f () -> f ()
-unless pred run = if pred then pure () else run
+-- Прибавляет новое значение к накопителю.
+tell :: w -> Writer w ()
+tell = _
 
--- Задание:
-instance Applicative Identity where
-instance Applicative ((,) a) where
-instance Applicative ((->) a) where
-instance Applicative Tree where
+-- Извлекает накопленные на данный момент данные.
+listen :: Writer w a -> Writer w (a, w)
+listen = _
 
--------------------------------- Монада ------------------------------------
+-- Например: факториал через Writer. Нам понадобится Monoid, суммирующий инты.
 
-{-
-Монады в Хаскелле являются подклассом Applicative, что не является математически корректным, но было сделано ради оптимизации. Есть два определения монад, но в определении класса в стандартной библиотеке зафиксировано через моноид эндофункторов.
+newtype Prod = Prod { getProd :: Integer }        deriving (Eq, Num)
+instance Semigroup Prod where
+  Prod a <> Prod b = Prod $ a * b
 
-Control.Monad:
--}
-class Applicative f => Monad f where
-  (>>=) :: f a -> (a -> f b) -> f b      -- он же bind
+instance Monoid Prod where
+  mempty = Prod 1
 
-{-
-Законы:
-pure a >>= k = k a
-m >>= pure = m
-m >>= (\x -> k x >>= h) = m >>= k >>= h
--}
+factorialWriter :: Integer -> Integer
+factorialWriter n = getProd $ execWriter (go (Prod n))
+  where
+  go 1 = pure ()
+  go n = tell n >> go (n - 1)
 
--- Полезности:
-return :: Monad m => a -> m a
-return = pure
+-- А вообще Writer часто используют для логгирования - просто сбрасываем отладочные данные в список строк.
 
-(>>) :: Monad m => m a -> m b -> m b
-(>>) = (*>)
+-------------------------------- State -------------------------------------
 
-(>=>) :: Monad m => (a -> m b) -> (b -> m c) -> (a -> m c)
-f >=> g = \x -> f x >>= g
+-- State - расширенный Reader, в котором можно менять контекст более понятным образом.
 
-forever :: Monad m => m a -> m b
-forever x = x >> forever x
+instance Functor (State s)
+instance Applicative (State s)
+instance Monad (State s)
 
--- Задания:
+execState :: State s a -> s -> s
+execState = _
 
--- Определить join через bind, pure, fmap
-join :: Monad m => m (m a) -> m a
-join = _
+evalState :: State s a -> s -> a
+evalState = _
 
--- Определить bind через join, pure, fmap. Здесь bind - синоним (>>=)
-bind :: Monad m => m a -> (a -> m b) -> m b
-bind = _
+-- Извлечь данные из контекста (как в ask)
+get :: State s s
+get = _
 
-{-
-Таким образом, Монада из теории категорий это
-Тройка (m, return, join), для которой коммутативны некоторые схемы
-ЛИБО
-Моноид (return, >=>)
--}
+-- Положить данные в контекст
+put :: s -> State s ()
+put = _
 
-instance Monad Identity where
-instance Monad ((,) a) where
-instance Monad ((->) a) where
-instance Monad Tree where
+-- Применить функцию к контексту
+modify :: (s -> s) -> State s ()
+modify = _
 
-{-
-Категория Клейсли
--}
-newtype Kleisli m a b = Kleisly (a -> m b)
+-- Как всегда - факториал. Будем хранить в контексте и счётчик и результат.
+factorialState :: Integer -> Integer
+factorialState n = snd $ execState go (n, 1)
+  where
+  go = do
+    (k, acc) <- get
+    if k == 0 then return () else put (k - 1, acc * k) >> go
 
-instance Monad m => Category (Kleisli m) where
-  id = _
-  (.) = _
+-------------------------------- ST/IO -------------------------------------
 
--------------------------------- Альтернатор -------------------------------
+-- https://hackage.haskell.org/package/base/docs/Control-Monad-ST.html
 
 {-
-Control.Applicative
--}
-class Applicative f => Alternative f where
-  empty :: f a
-  (<|>) :: f a -> f a -> f a
-  some :: f a -> f [a]
-  many :: f a -> f [a]
-
-guard :: Alternative f => Bool -> f ()
-guard True = pure ()
-guard False = empty
-
--------------------------------- Сахарок -----------------------------------
-
-{-
-do-syntax:
--}
-
-main :: IO ()
-main = Control.Monad.forever $ do
-  putStrLn "Awaiting for input"
-  char <- getChar
-  putStrLn "Received one char:"
-  print char
-
-{-
-do-syntax - серия инструкций разделённых переносами строк либо записанная в виде
-do { cmd1; cmd2; cmd3 ... }
-
-Каждая инструкция имеет вид либо
-  1. methodCall
-  2. var <- methodCall
-  3. let var = pureValue
-
-По определению, это раскрывается следующим образом:
-
- 1. desugar
-      methodCall
-      rest
-
-        ||
-        \/
-
-      methodCall >> desugar[rest]
- 2. desugar
-      var <- methodCall
-      rest
-
-        ||
-        \/
-
-      methodCall >>= (\var -> desugar[rest])
- 3. desugar
-      let var = value
-      rest
-
-        ||
-        \/
-
-      let var = value in desugar[rest]
-
-  ЗАМЕЧАНИЕ!!!
-  return - не завершает вызов функции, не выходит из контекста, не передаёт никуда значение. В коде ниже, return не делает ровным счётом ничего.
-
-```
-  do
-    print "Hello"
-    return 42
-    print "Hello again"
-```
-  return нужен, чтобы прямо сейчас сохранить значение, если не хочется использовать let, или как последний вызов, и тогда результат действительно будет передан наверх.
+ST - особая монада, разновидность State, но позволяющая работать с памятью in place. В модулях Data.STRef, Data.Array.ST (библиотека Array) определены реальные мутабельные переменные и массивы. Хотя ST разрешает мутировать данные в памяти, но она гарантирует, что мы не сможем, например, выйти в сеть, в файловую систему, и что мутабельные данные определены на уровне типа.
 -}
 
 {-
-Теперь мы можем понять, что делает list comprehension. С расширением MonadComprehensions, его можно использовать для произвольных монад.
+Чтобы в чистом языке работать с "нечистыми" данными - временем, пользовательским вводом и т.д. мы можем объявить их просто как ещё один поток событий. По определению type `IO = ST RealWorld` - это state-монада, которая мутирует реальный мир. (Библиотека ghc-prim)
 
-[ F x y | x <- method1, predicate1 x, y <- method2, predicate2 x y ]
+getLine :: IO String
+getLine :: ST RealWorld String
+getLine ~~ RealWorld -> (String, RealWorld)
 
- это то же самое, что
-```
-foo = do
-  x <- method1
-  guard $ predicate x
-  y <- method2
-  guard $ predicate x y
-  return $ F x y
-```
+аналогично
+print ~~ String -> (RealWorld -> ((), RealWorld))
+-}
+
+-------------------------------- Concurrency -------------------------------
+
+{-
+Хаскелл использует "зелёные" потоки - это потоки, которые управляются runtime'ом компилятора, а не операционной системой. Логически для программиста - это обычные легковесные потоки (запустить 10000 потоков - вообще не проблема и никем не осуждается), а физически - больше похоже на асинхронную систему. С включенным флагом -threaded ghc может запускать свои потоки на реальных OS потоках, возможно, мигрируя между ними. Это поведение может быть настроено. Для работы с конкуррентностью нам нужен модуль Control.Concurrent и функции forkIO, forkFinally.
 -}
 
 {-
-Задание на дом:
-1. Зная законы для перечисленных классов, написать quickcheck тесты для всех самописных instance'ов.
-
-2. Разобраться, как работает встроенный Applicative для списков, придумать другой алгоритм свётрки и написать свой. Сделать тесты.
+Для синхронизации потоков можно использовать Data.IORef - общие мутабельные переменные, Control.Concurrent.MVar - "mutable location", которое может хранить значение или не хранить ничего. Вызовы putMVar, takeMVar могут блокироваться в зависимости от наличия данных. Хаскелл пытается отслеживать deadlock'и, но полагаться на это не следует.
 -}
 
-newtype WrappedList a = WL [a]
-instance Functor WrappedList where
-instance Applicative WrappedList where
+-------------------------------- Exeptions ---------------------------------
+
+{-
+Control.Exception.
+В Хаскелле асинхронные исключения - любой поток может бросить любое исключение в любой другой поток, имея его ThreadId. Для работы с исключениями используются функции try, catch, handle, mask, killThread, throw, throwIO. По умолчанию, при использовании catch-like функций следует указывать тип исключения, которое мы хотим поймать:
+
+catch someAction (\(e :: IOException) -> doSmth e)
+такой код обработает IOException, но все остальные пробросит выше. Чтобы ловить все исключения следует использовать обобщающий SomeException
+
+catch someAction (\(e :: SomeException) -> doSmth e)
+такой код обработает все исключения.
+-}
